@@ -36,6 +36,7 @@ async function run() {
 
     const database = client.db('bdbnDB');
     const serviceCollection = database.collection('serviceCollection');
+    const bookingCollection = database.collection('bookingCollection');
 
     app.post('/services', async(req,res)=>{
         const service = req.body;
@@ -44,7 +45,8 @@ async function run() {
     })
 
     app.get('/services', async(req,res)=>{
-        const cursor = await serviceCollection.find().toArray();
+      const query = req.query;
+        const cursor = await serviceCollection.find(query).toArray();
         res.send(cursor);
     })
 
@@ -58,6 +60,26 @@ async function run() {
     app.get('/popularservices', async(req,res)=>{
       const cursor = await serviceCollection.find().limit(5).toArray();
       res.send(cursor);
+  })
+
+  app.post('/bookings', async(req,res)=>{
+    const booking  = req.body;
+    const result = await bookingCollection.insertOne(booking);
+    res.send(result); 
+  })
+
+  app.get('/bookings', async(req,res)=>{
+    const query = req.query;
+    const cursor = await bookingCollection.find(query).toArray();
+    res.send(cursor)
+  })
+
+  app.delete('/services', async(req,res)=>{
+    const id = req.body;
+    const query = {_id : new ObjectId(id._id)};
+    const result = await serviceCollection.deleteOne(query);
+    res.send(result);
+    // console.log(id);
   })
 
     // Send a ping to confirm a successful connection
