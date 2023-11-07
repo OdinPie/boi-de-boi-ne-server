@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // middleware
 //BookAdmin
@@ -42,6 +42,24 @@ async function run() {
         const result = await serviceCollection.insertOne(service);
         res.send(result);
     })
+
+    app.get('/services', async(req,res)=>{
+        const cursor = await serviceCollection.find().toArray();
+        res.send(cursor);
+    })
+
+    app.get('/services/:id', async(req,res)=>{
+      const id = req.params;
+      const query = {_id: new ObjectId(id)}
+      const cursor = await serviceCollection.find(query).toArray();
+      res.send(cursor)
+  })
+
+    app.get('/popularservices', async(req,res)=>{
+      const cursor = await serviceCollection.find().limit(5).toArray();
+      res.send(cursor);
+  })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
