@@ -93,7 +93,7 @@ async function run() {
     const query = {sname: regex};
     const result = await serviceCollection.find(query).toArray();
     res.send(result);
-    // console.log(hint);
+    
   })
 
   app.delete('/services', async(req,res)=>{
