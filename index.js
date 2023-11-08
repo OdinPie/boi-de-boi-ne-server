@@ -101,7 +101,7 @@ async function run() {
     const query = {_id : new ObjectId(id._id)};
     const result = await serviceCollection.deleteOne(query);
     res.send(result);
-    // console.log(id);
+  
   })
 
   app.post('/users',async(req,res)=>{
