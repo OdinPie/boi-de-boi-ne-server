@@ -74,12 +74,67 @@ async function run() {
     res.send(cursor)
   })
 
+  app.get('/bookings/:id', async(req,res)=>{
+    const id = req.params;
+    const query = {_id: new ObjectId(id)}
+    const cursor = await bookingCollection.find(query).toArray();
+    res.send(cursor)
+})
+
+  app.delete('/bookings', async(req,res)=>{
+    const id = req.body;
+    const query = {_id : new ObjectId(id._id)};    
+    const result = await bookingCollection.deleteOne(query);
+    res.send(result)
+  })
+
   app.delete('/services', async(req,res)=>{
     const id = req.body;
     const query = {_id : new ObjectId(id._id)};
     const result = await serviceCollection.deleteOne(query);
     res.send(result);
     // console.log(id);
+  })
+
+  app.patch('/services/:id', async(req,res)=>{
+    const updatedInfo = req.body;
+    const id = req.params;
+    const {
+      updatedsname,
+      updatedspic,
+      updatedslocation,
+      updatedprice,
+      updateddetail} = updatedInfo;
+
+    const filter = {_id: new ObjectId(id)};
+    const option = {upsert : true};
+    const updateDoc = {
+      $set:{
+        sname : updatedsname,
+        spic : updatedspic,
+        slocation : updatedslocation,
+        price : updatedprice,
+        detail : updateddetail
+      }
+    }
+    const result = await serviceCollection.updateOne(filter, updateDoc,option)
+    res.send(result);
+  })
+
+  app.patch('/bookings/:id', async(req,res)=>{
+    const updatedInfo = req.body;
+    const id = req.params;
+    const {statusValue} = updatedInfo;
+
+    const filter = {_id: new ObjectId(id)};
+    const option = {upsert : true};
+    const updateDoc = {
+      $set:{
+        state : statusValue
+      }
+    }
+    const result = await bookingCollection.updateOne(filter, updateDoc,option)
+    res.send(result);
   })
 
     // Send a ping to confirm a successful connection
