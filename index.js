@@ -4,9 +4,7 @@ const cors = require('cors');
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
-// middleware
-//BookAdmin
-//OB2HduJbvc9GFk2k
+
 app.use(cors());
 app.use(express.json());
 
@@ -37,6 +35,7 @@ async function run() {
     const database = client.db('bdbnDB');
     const serviceCollection = database.collection('serviceCollection');
     const bookingCollection = database.collection('bookingCollection');
+    const userCollection = database.collection('userCollection');
 
     app.post('/services', async(req,res)=>{
         const service = req.body;
@@ -88,12 +87,33 @@ async function run() {
     res.send(result)
   })
 
+  app.get('/search/:hint', async(req, res)=>{
+    const {hint} = req.params;
+    const regex = new RegExp(`.*${hint}.*`,"i")
+    const query = {sname: regex};
+    const result = await serviceCollection.find(query).toArray();
+    res.send(result);
+    // console.log(hint);
+  })
+
   app.delete('/services', async(req,res)=>{
     const id = req.body;
     const query = {_id : new ObjectId(id._id)};
     const result = await serviceCollection.deleteOne(query);
     res.send(result);
     // console.log(id);
+  })
+
+  app.post('/users',async(req,res)=>{
+    const user = req.body;
+    const result = await userCollection.insertOne(user);
+    res.send(result);
+  })
+
+  app.get('/users', async(req,res)=>{
+    const query = req.query;
+    const result = await userCollection.find(query).toArray();
+    res.send(result);
   })
 
   app.patch('/services/:id', async(req,res)=>{
