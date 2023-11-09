@@ -1,14 +1,21 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-require('dotenv').config()
+require('dotenv').config();
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
-app.use(cors());
+app.use(cors({
+  // origin: ['http://localhost:5173','http://localhost:5174'],
+  origin: ['https://book-exchange-website-7550b.web.app',
+  'https://book-exchange-website-7550b.firebaseapp.com'],
+  credentials: true
+}));
 app.use(express.json());
-
+app.use(cookieParser());
 app.get('/', (req, res)=>{
     res.send('boi de boi ne server is running');
 })
@@ -28,6 +35,25 @@ const client = new MongoClient(uri, {
   }
 });
 
+const verifyToken  = async(req,res,next) =>{
+  const token = req?.cookies?.token;
+  // console.log('middleware token: ',token);
+    if(!token){
+      console.log('token nai');
+        return res.status(401).send({message: 'unauthorized access'})
+    }
+    jwt.verify(token, process.env.JWT_SECRET, function (err, decoded){
+        if(err){
+          console.log('ulta palta token');
+        return res.status(401).send({message: 'unauthorized access'})
+        }
+        req.user = decoded;
+         next();
+   
+  })
+
+}
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -38,7 +64,27 @@ async function run() {
     const bookingCollection = database.collection('bookingCollection');
     const userCollection = database.collection('userCollection');
 
-    app.post('/services', async(req,res)=>{
+
+    //auth related api
+
+    app.post('/jwt', async(req,res)=>{
+      const user = req.body;
+      const token = jwt.sign({data: user},`${process.env.JWT_SECRET}`,{expiresIn: '1h'});
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none'
+      })
+      .send({success: true})
+    })
+
+    app.post('/logout', async(req, res)=>{
+      const user = req.body;
+      res.clearCookie('token', {maxAge: 0})
+      .send({success: true})
+    })
+
+    app.post('/services', verifyToken, async(req,res)=>{
         const service = req.body;
         const result = await serviceCollection.insertOne(service);
         res.send(result);
@@ -68,7 +114,12 @@ async function run() {
     res.send(result); 
   })
 
-  app.get('/bookings', async(req,res)=>{
+  app.get('/bookings',verifyToken, async(req,res)=>{
+    // console.log('info jar: ', req.query?.data?.email);
+    // console.log('je access kortese', req.user?.useremail);
+    if(req.query?.data?.email !== req.user?.useremail || req.query?.data?.email !== req.user?.provideremail){
+      return res.status(403).send({message: 'forbidden access'}) 
+    }
     const query = req.query;
     const cursor = await bookingCollection.find(query).toArray();
     res.send(cursor)
